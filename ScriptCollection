@@ -1,0 +1,335 @@
+public class CameraController : MonoBehaviour
+{
+    //Variables
+    public GameObject player;
+    private Vector3 offset = new Vector3(0, 2, 0);
+    // Start is called before the first frame update
+    void Start()
+    {
+
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        transform.position = player.transform.position + offset;
+    }
+    
+}
+
+..........................................................................................................................................................................
+
+public class DetectCollisions : MonoBehaviour
+{//Variables
+
+    // Start is called before the first frame update
+    void Start()
+    {
+
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+
+    }
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.CompareTag("Enemy"))
+        {
+            Destroy(gameObject);
+        }
+        else if (other.gameObject.CompareTag("Ground"))
+        {
+            Destroy(gameObject);
+        }
+    }
+   
+}
+
+.......................................................................................................................................................................
+
+public class PlayerController : MonoBehaviour
+{
+    //Variables
+    
+    //movement
+    
+    public float speed;
+    public float verticalInput;
+    public float horizontalInput;
+    public float turnSpeed;
+    public KeyCode jumpKey;
+    public KeyCode crouchKey;
+    
+    //Model
+    
+    public Rigidbody playerRB;
+    public float jumpForce;
+    
+    //Respawn
+    
+    public GameObject spawnPoint;
+    
+    //Attacking
+    
+    public GameObject projectilePrefab;
+    public GameObject projectileSpawner;
+    public KeyCode attackKey;
+    
+    //restriction
+    
+    public float xRange = 20;
+    public float gravityModifier;
+    public bool isOnGround = true;
+    
+    //Animation
+    
+    private Animator playerAnim;
+    
+    // Start is called before the first frame update
+     //Game Manager
+    public GameManager gameManager;
+    void Start()
+    {
+        playerRB = GetComponent<Rigidbody>();
+        playerAnim = GetComponent<Animator>();
+        Physics.gravity *= gravityModifier;
+        transform.Rotate(Vector3.up * 90);
+         gameManager = GameObject.Find("GameMangaer").GetComponent<GameManager>();
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        //Movement
+        
+        //Jumping
+        
+        if (Input.GetKeyDown(jumpKey) && isOnGround)
+        {
+            playerRB.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        }
+
+        //ForwardMovement
+        
+        verticalInput = Input.GetAxis("Vertical");
+        transform.Translate(Vector3.forward * Time.deltaTime * verticalInput * speed);
+        playerAnim.SetFloat("verticalInput", Mathf.Abs(verticalInput));
+        
+        //Turning
+        
+        horizontalInput = Input.GetAxis("Horizontal");
+        transform.Rotate(Vector3.up, turnSpeed * horizontalInput * Time.deltaTime);
+        
+        //Shooting
+        
+       // if (Input.GetKeyDown(KeyCode.Space))
+            //Instantiate(projectilePrefab, projectileSpawner.transform.position, projectileSpawner.transform.rotation);
+       // isOnGround = false;
+
+    }
+    private void OnCollisionEnter(Collision collision)
+    {
+        isOnGround = true;
+        if(collision.gameObject.CompareTag("Collectible"))
+        {
+            Destroy(collision.gameObject);
+            gameManager.AddScore(collision.gameObject.GetComponent<CollectibleController>().value);
+        }
+    }
+}
+
+......................................................................................................................................................................
+
+public class SpawnManager : MonoBehaviour
+{
+    //variables
+    public GameObject[] enemyPrefab;
+    private float spawnPosZ = 20;
+    private float spawnRangeX = 20;
+    private float startDelay = 2;
+    private float spawnInterval = 5;
+    // Start is called before the first frame update
+    void Start()
+    {
+        InvokeRepeating("SpawnrandomEnemy", startDelay, spawnInterval);
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+       
+    }
+    private void SpawnRandomEnemy()
+    {
+        //spawn enemy
+        Vector3 spawnPos = new Vector3(Random.Range(-spawnRangeX, spawnRangeX), 0, spawnPosZ);
+        int enemyIndex = Random.Range(0, enemyPrefab.Length);
+        Instantiate(enemyPrefab[enemyIndex], spawnPos, enemyPrefab[enemyIndex].transform.rotation);
+    }
+}
+
+..................................................................................................................................................................
+
+public class MoveForward : MonoBehaviour
+{
+    //Variables
+    public float projectileSpeed;
+    // Start is called before the first frame update
+    void Start()
+    {
+        
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        transform.Translate(Vector3.forward * Time.deltaTime * projectileSpeed);
+    }
+}
+
+................................................................................................................................................................
+
+public class FollowPlayer : MonoBehaviour
+{
+    //Variables
+    public GameObject player;
+    private Vector3 offset = new Vector3(0, 10, -3);
+    // Start is called before the first frame update
+    void Start()
+    {
+        
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        transform.position = player.transform.position + offset;
+    }
+}
+
+................................................................................................................................................................
+
+public class LevelAdvancer : MonoBehaviour
+{
+    //Variables
+    public string nextLevel;
+    public float delayTime;
+    public AudioSource audioSource;
+
+    void Start()
+    {
+        audioSource = GetComponent<AudioSource>();
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if(collision.gameObject.CompareTag("Player"))
+        {
+            audioSource.Play();
+            Invoke("GoToNextLevel", delayTime);
+        }
+    }
+
+    private void GoToNextLevel()
+    {
+        SceneManager.LoadScene(nextLevel);
+    }
+}
+
+............................................................................................................................................................................
+
+MouseController
+
+ //Variables
+    //Animation
+    public Animator animator;
+    public bool isScared = false;
+    //Audio
+    public AudioSource audioSource;
+    public AudioClip click;
+    //Mouse
+    public Rigidbody MouseRB;
+    //World
+    public Vector3 mousePos;
+    public Vector3 dragPos;
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        animator = GetComponent<Animator>();
+        audioSource = GetComponent<AudioSource>();
+        MouseRB = GetComponent<Rigidbody>();
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        animator.SetBool("isScared", isScared);
+
+        //Get the position of the mouse
+        mousePos = Input.mousePosition;
+        //Change pixel to world component
+        dragPos = Camera.main.ScreenToWorldPoint(mousePos);
+        //Adjust the Z to match the world object
+        dragPos.z = gameObject.transform.position.z;
+    }
+
+    private void OnMouseDrag()
+    {
+        transform.position = dragPos;
+    }
+
+    private void OnMouseEnter()
+    {
+        isScared = true;
+    }
+
+
+    private void OnMouseExit()
+    {
+        isScared = false;
+    }
+
+    private void OnMouseDown()
+    {
+        audioSource.PlayOneShot(click);
+        //MouseRB.AddForce(Vector3.up * 20, ForceMode.Impulse);
+    }
+}
+
+.........................................................................................................................................................................
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using TMPro;
+
+public class GameManager : MonoBehaviour
+{
+
+    //Variables 
+    public float score = 0;
+    public TextMeshProUGUI scoreDisplay;
+    // Start is called before the first frame update
+    void Start()
+    {
+        
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        
+    }
+
+    public void AddScore( int value)
+    {
+        score += value;
+        scoreDisplay.text = "Score =  " + score;
+    }
+}
+
+......................................................................................................................................................................
+
